@@ -1,10 +1,13 @@
-import time
-import torch
-import subprocess
 import os
-from model import EAST
-from detect import detect_dataset
+import re
 import shutil
+import subprocess
+import time
+
+import torch
+
+from detect import detect_dataset
+from model import EAST
 
 
 def eval_model(model_name, test_img_path, submit_path, save_flag=True):
@@ -76,9 +79,10 @@ def eval_torch_model(model, test_img_path, submit_path, save_flag=True):
         shutil.rmtree(submit_path)
 
     # extract python float number from output string
-    # e.g. res is "Precision: 0.977 Recall: 0.977 F1: 0.977", then
-    # return 0.977, 0.977, 0.977
-    acc, recall, f1 = res.split("\n")[-3].split(" ").astype(float)
+    # e.g. res is  {"precision": 0.7593778591033852, "recall": 0.7992296581608088, "hmean": 0.7787942763312221, "AP": 0}, then
+    # return 0.7593778591033852, 0.7992296581608088, 0.7787942763312221
+    _res = re.split("\n|, |: ", res)
+    acc, recall, f1 = float(_res[1]), float(_res[3]), float(_res[5])
     return acc, recall, f1
 
 
