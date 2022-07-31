@@ -11,6 +11,7 @@ from dataset import custom_dataset
 from loss import Loss
 from model import EAST
 from utils import get_lr
+from eval import eval_torch_model
 
 
 def train(
@@ -21,7 +22,7 @@ def train(
     lr,
     num_workers,
     epoch_iter,
-    interval,
+    save_interval,
 ):
     file_num = len(os.listdir(train_img_path))
     trainset = custom_dataset(train_img_path, train_gt_path)
@@ -50,6 +51,8 @@ def train(
         epoch_loss = 0
         epoch_time = time.time()
         for i, (img, gt_score, gt_geo, ignored_map) in enumerate(train_loader):
+            # total step is current total step numbers from training start
+            total_step = epoch * len(train_loader) + i
             start_time = time.time()
             img, gt_score, gt_geo, ignored_map = (
                 img.to(device),
@@ -76,7 +79,10 @@ def train(
                 )
             )
             # upload the learning rate and loss after current step
-            wandb.log({"learning rate": get_lr(optimizer), "loss": loss.item()})
+            wandb.log(
+                {"learning rate": get_lr(optimizer), "loss": loss.item()},
+                step=total_step,
+            )
 
         print(
             "epoch_loss is {:.8f}, epoch_time is {:.8f}".format(
@@ -85,7 +91,14 @@ def train(
         )
         print(time.asctime(time.localtime(time.time())))
         print("=" * 50)
-        if (epoch + 1) % interval == 0:
+        # evaluate and save the model every `save_interval` epochs, skip first `skip_eval` epochs
+        if ((epoch + 1) > skip_eval) and ((epoch + 1) % save_interval == 0):
+            # get the eval results in float
+            acc, recall, f1 = eval_torch_model(model, test_img_path, submit_path)
+            # upload evaluation results to wandb
+            wandb.log({"acc": acc, "recall": recall, "f1": f1}, step=total_step)
+            # restore model state to train (otherwise the model params would not be updated)
+            model.train()
             state_dict = (
                 model.module.state_dict() if data_parallel else model.state_dict()
             )
@@ -104,6 +117,9 @@ if __name__ == "__main__":
     num_workers = 4
     epoch_iter = 600
     save_interval = 5
+    skip_eval = 50
+    test_img_path = os.path.abspath("../ICDAR_2015/test_img")
+    submit_path = "./submit"
     # init the wandb project
     wandb.init(project="EAST-resnet50", entity="chunfei-fyp")
     # register current experiment config
