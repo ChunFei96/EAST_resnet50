@@ -50,7 +50,6 @@ def train(
     scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, 'min')
     for epoch in range(epoch_iter):
         model.train()
-        scheduler.step()
         epoch_loss = 0
         epoch_time = time.time()
         for i, (img, gt_score, gt_geo, ignored_map) in enumerate(train_loader):
@@ -65,7 +64,7 @@ def train(
             )
             pred_score, pred_geo = model(img)
             loss = criterion(gt_score, pred_score, gt_geo, pred_geo, ignored_map)
-
+            
             epoch_loss += loss.item()
             optimizer.zero_grad()
             loss.backward()
@@ -86,7 +85,8 @@ def train(
                 {"learning rate": get_lr(optimizer), "loss": loss.item()},
                 step=total_step,
             )
-
+            
+        scheduler.step(loss)
         print(
             "epoch_loss is {:.8f}, epoch_time is {:.8f}".format(
                 epoch_loss / int(file_num / batch_size), time.time() - epoch_time
