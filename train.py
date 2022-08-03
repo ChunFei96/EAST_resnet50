@@ -1,4 +1,5 @@
 import os
+from sched import scheduler
 import time
 
 import torch
@@ -41,10 +42,12 @@ def train(
         model = nn.DataParallel(model)
         data_parallel = True
     model.to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    scheduler = lr_scheduler.MultiStepLR(
-        optimizer, milestones=[epoch_iter // 2], gamma=0.1
-    )
+    #optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    #scheduler = lr_scheduler.MultiStepLR(
+    #     optimizer, milestones=[epoch_iter // 2], gamma=0.1
+    # )
+    optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum = 0.9)
+    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, 'min')
     for epoch in range(epoch_iter):
         model.train()
         scheduler.step()
@@ -115,7 +118,7 @@ if __name__ == "__main__":
     batch_size = 24
     lr = 1e-3
     num_workers = 4
-    epoch_iter = 600
+    epoch_iter = 1200
     save_interval = 5
     skip_eval = 50
     test_img_path = os.path.abspath("../ICDAR_2015/test_img")
