@@ -47,7 +47,7 @@ def train(
     #     optimizer, milestones=[epoch_iter // 2], gamma=0.1
     # )
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum = 0.9)
-    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, 'min')
+    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.9, patience=2000)
     for epoch in range(epoch_iter):
         model.train()
         epoch_loss = 0
@@ -69,7 +69,7 @@ def train(
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-
+            scheduler.step(loss)
             print(
                 "Epoch is [{}/{}], mini-batch is [{}/{}], time consumption is {:.8f}, batch_loss is {:.8f}".format(
                     epoch + 1,
@@ -86,14 +86,13 @@ def train(
                 step=total_step,
             )
             
-        scheduler.step(loss)
         print(
             "epoch_loss is {:.8f}, epoch_time is {:.8f}".format(
                 epoch_loss / int(file_num / batch_size), time.time() - epoch_time
             )
         )
         print(time.asctime(time.localtime(time.time())))
-        print("=" * 50)
+        print("=" * 100)
         # evaluate and save the model every `save_interval` epochs, skip first `skip_eval` epochs
         if ((epoch + 1) > skip_eval) and ((epoch + 1) % save_interval == 0):
             # get the eval results in float
@@ -114,13 +113,13 @@ def train(
 if __name__ == "__main__":
     train_img_path = os.path.abspath("../ICDAR_2015/train_img")
     train_gt_path = os.path.abspath("../ICDAR_2015/train_gt")
-    pths_path = "./pths/02Apr"
+    pths_path = "./pths/11Aug_resnet50"
     batch_size = 24
     lr = 1e-3
     num_workers = 4
     epoch_iter = 1200
     save_interval = 5
-    skip_eval = 50
+    skip_eval = 100
     test_img_path = os.path.abspath("../ICDAR_2015/test_img")
     submit_path = "./submit"
     # init the wandb project
