@@ -46,8 +46,8 @@ def train(
     #scheduler = lr_scheduler.MultiStepLR(
     #     optimizer, milestones=[epoch_iter // 2], gamma=0.1
     # )
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum = 0.9)
-    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.9, patience=2000)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.8, patience=1000)
     for epoch in range(epoch_iter):
         model.train()
         epoch_loss = 0
