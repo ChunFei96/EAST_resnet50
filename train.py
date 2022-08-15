@@ -47,7 +47,7 @@ def train(
     #     optimizer, milestones=[epoch_iter // 2], gamma=0.1
     # )
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.8, patience=600)
+    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.7, patience=500)
     for epoch in range(epoch_iter):
         model.train()
         epoch_loss = 0
