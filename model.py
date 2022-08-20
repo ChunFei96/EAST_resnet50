@@ -55,6 +55,30 @@ class merge(nn.Module):
 		self.bn7 = nn.BatchNorm2d(32)
 		self.relu7 = nn.ReLU()
 		
+		# feature map 1
+		self.f_map1_conv1 = nn.Conv2d(2048, 32, 1)
+		self.f_map1_bn1 = nn.BatchNorm2d(32)
+		self.f_map1_relu1 = nn.ReLU()
+		self.f_map1_conv2 = nn.Conv2d(32, 32, 3, padding=1)
+		self.f_map1_bn2 = nn.BatchNorm2d(32)
+		self.f_map1_relu2 = nn.ReLU()
+
+		# feature map 2
+		self.f_map2_conv1 = nn.Conv2d(128, 32, 1)
+		self.f_map2_bn1 = nn.BatchNorm2d(32)
+		self.f_map2_relu1 = nn.ReLU()
+		self.f_map2_conv2 = nn.Conv2d(32, 32, 3, padding=1)
+		self.f_map2_bn2 = nn.BatchNorm2d(32)
+		self.f_map2_relu2 = nn.ReLU()
+
+		# feature map 3
+		self.f_map3_conv1 = nn.Conv2d(64, 32, 1)
+		self.f_map3_bn1 = nn.BatchNorm2d(32)
+		self.f_map3_relu1 = nn.ReLU()
+		self.f_map3_conv2 = nn.Conv2d(32, 32, 3, padding=1)
+		self.f_map3_bn2 = nn.BatchNorm2d(32)
+		self.f_map3_relu2 = nn.ReLU()
+		
 		for m in self.modules():
 			if isinstance(m, nn.Conv2d):
 				nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
@@ -65,23 +89,39 @@ class merge(nn.Module):
 				nn.init.constant_(m.bias, 0)
 
 	def forward(self, x):
-		y = F.interpolate(x[3], scale_factor=2, mode='bilinear', align_corners=True)
-		y = torch.cat((y, x[2]), 1)
-		y = self.relu1(self.bn1(self.conv1(y)))		
-		y = self.relu2(self.bn2(self.conv2(y)))
+		#x[3] = 2048, 16, 16
+
+		f_map1 = F.interpolate(x[3], scale_factor=8, mode='bilinear', align_corners=True)
+		f_map1 = self.f_map1_relu1(self.f_map1_bn1(self.f_map1_conv1(f_map1)))
+		f_map1 = self.f_map1_relu2(self.f_map1_bn2(self.f_map1_conv2(f_map1)))
+
+		y = F.interpolate(x[3], scale_factor=2, mode='bilinear', align_corners=True) #y = 2048, 32, 32
+		y = torch.cat((y, x[2]), 1) #y = 3072, 32, 32
+		y = self.relu1(self.bn1(self.conv1(y)))	#y = 128, 32, 32	
+		y = self.relu2(self.bn2(self.conv2(y))) #y = 128, 32, 32
+
+		f_map2 = F.interpolate(y, scale_factor=4, mode='bilinear', align_corners=True)
+		f_map2 = self.f_map2_relu1(self.f_map2_bn1(self.f_map2_conv1(f_map2)))
+		f_map2 = self.f_map2_relu2(self.f_map2_bn2(self.f_map2_conv2(f_map2)))
 		
-		y = F.interpolate(y, scale_factor=2, mode='bilinear', align_corners=True)
-		y = torch.cat((y, x[1]), 1)
-		y = self.relu3(self.bn3(self.conv3(y)))		
-		y = self.relu4(self.bn4(self.conv4(y)))
+		y = F.interpolate(y, scale_factor=2, mode='bilinear', align_corners=True) #y = 128, 64, 64
+		y = torch.cat((y, x[1]), 1) #y = 640, 64, 64
+		y = self.relu3(self.bn3(self.conv3(y)))	#y = 64, 64, 64	 
+		y = self.relu4(self.bn4(self.conv4(y))) #y = 64, 64, 64
 		
-		y = F.interpolate(y, scale_factor=2, mode='bilinear', align_corners=True)
-		y = torch.cat((y, x[0]), 1)
-		y = self.relu5(self.bn5(self.conv5(y)))		
-		y = self.relu6(self.bn6(self.conv6(y)))
+		f_map3 = F.interpolate(y, scale_factor=2, mode='bilinear', align_corners=True)
+		f_map3 = self.f_map3_relu1(self.f_map3_bn1(self.f_map3_conv1(f_map3)))
+		f_map3 = self.f_map3_relu2(self.f_map3_bn2(self.f_map3_conv2(f_map3)))
+
+		y = F.interpolate(y, scale_factor=2, mode='bilinear', align_corners=True) #y = 64, 128, 128
+		y = torch.cat((y, x[0]), 1) #y = 320, 128, 128
+		y = self.relu5(self.bn5(self.conv5(y)))	#y = 32, 128, 128	
+		y = self.relu6(self.bn6(self.conv6(y))) #y = 32, 128, 128
 		
 		y = self.relu7(self.bn7(self.conv7(y)))
-		return y
+
+		f_map_concat = torch.cat((f_map1,f_map2,f_map3,y), 1)
+		return f_map_concat
 
 class output(nn.Module):
 	def __init__(self, scope=512):
