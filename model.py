@@ -132,7 +132,7 @@ class output(nn.Module):
 		self.sigmoid2 = nn.Sigmoid()
 		self.conv3 = nn.Conv2d(128, 1, 1)
 		self.sigmoid3 = nn.Sigmoid()
-		self.scope = 1024
+		self.scope = 512
 		for m in self.modules():
 			if isinstance(m, nn.Conv2d):
 				nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
