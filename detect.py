@@ -181,8 +181,8 @@ def detect_dataset(model, device, test_img_path, submit_path):
 
 
 if __name__ == '__main__':
-	img_path    = '../ICDAR_2015/test_img/img_58.jpg'
-	model_path  = './pths/east_vgg16.pth'
+	img_path    = '../ICDAR_2015/test_img/img_6.jpg'
+	model_path  = './pths/model_epoch_1200.pth'
 	res_img     = './res.bmp'
 	device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 	model = EAST().to(device)

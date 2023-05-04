@@ -42,12 +42,10 @@ def train(
         model = nn.DataParallel(model)
         data_parallel = True
     model.to(device)
-    #optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    #scheduler = lr_scheduler.MultiStepLR(
-    #     optimizer, milestones=[epoch_iter // 2], gamma=0.1
-    # )
+
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.85, patience=1200)
+    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.8, patience=2000)
+    
     for epoch in range(epoch_iter):
         model.train()
         epoch_loss = 0
@@ -113,7 +111,7 @@ def train(
 if __name__ == "__main__":
     train_img_path = os.path.abspath("../ICDAR_2015/train_img")
     train_gt_path = os.path.abspath("../ICDAR_2015/train_gt")
-    pths_path = "./pths/11Aug_resnet50"
+    pths_path = "./pths"
     batch_size = 24
     lr = 1e-3
     num_workers = 4

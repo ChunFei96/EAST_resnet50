@@ -62,6 +62,7 @@ class merge(nn.Module):
 		self.f_map1_conv2 = nn.Conv2d(32, 32, 3, padding=1)
 		self.f_map1_bn2 = nn.BatchNorm2d(32)
 		self.f_map1_relu2 = nn.ReLU()
+		
 
 		# feature map 2
 		self.f_map2_conv1 = nn.Conv2d(128, 32, 1)
@@ -89,7 +90,6 @@ class merge(nn.Module):
 				nn.init.constant_(m.bias, 0)
 
 	def forward(self, x):
-		#x[3] = 2048, 16, 16
 
 		f_map1 = F.interpolate(x[3], scale_factor=8, mode='bilinear', align_corners=True)
 		f_map1 = self.f_map1_relu1(self.f_map1_bn1(self.f_map1_conv1(f_map1)))
@@ -126,11 +126,11 @@ class merge(nn.Module):
 class output(nn.Module):
 	def __init__(self, scope=512):
 		super(output, self).__init__()
-		self.conv1 = nn.Conv2d(128, 1, 1)
+		self.conv1 = nn.Conv2d(128, 1, 1) # 32, 1, 1
 		self.sigmoid1 = nn.Sigmoid()
-		self.conv2 = nn.Conv2d(128, 4, 1)
+		self.conv2 = nn.Conv2d(128, 4, 1) # 32, 4, 1
 		self.sigmoid2 = nn.Sigmoid()
-		self.conv3 = nn.Conv2d(128, 1, 1)
+		self.conv3 = nn.Conv2d(128, 1, 1) # 32, 1, 1
 		self.sigmoid3 = nn.Sigmoid()
 		self.scope = 512
 		for m in self.modules():
@@ -139,7 +139,7 @@ class output(nn.Module):
 				if m.bias is not None:
 					nn.init.constant_(m.bias, 0)
 
-	def forward(self, x):
+	def forward(self, x): # x = 128, 128, 128
 		score = self.sigmoid1(self.conv1(x))
 		loc   = self.sigmoid2(self.conv2(x)) * self.scope
 		angle = (self.sigmoid3(self.conv3(x)) - 0.5) * math.pi
